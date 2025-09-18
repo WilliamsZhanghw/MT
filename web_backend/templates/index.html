@@ -12,16 +12,22 @@
         .controls-container { display: flex; flex-direction: column; gap: 1rem; }
         .widget { background: #1e222d; border-radius: 8px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         h2 { margin-top: 0; border-bottom: 1px solid #444; padding-bottom: 0.5rem; }
+        h3 { margin-top: 0; }
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
         .form-group { display: flex; flex-direction: column; }
         label { margin-bottom: 0.5rem; font-weight: 500; color: #aaa; }
-        input, select { padding: 0.75rem; border: 1px solid #444; background-color: #333; color: #eee; border-radius: 4px; font-size: 1rem; }
+        input, select, button { padding: 0.75rem; border: 1px solid #444; background-color: #333; color: #eee; border-radius: 4px; font-size: 1rem; }
         .button-group { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem; }
-        button { padding: 0.8rem; border: none; border-radius: 4px; font-size: 1rem; font-weight: bold; cursor: pointer; transition: opacity 0.2s; color: white; }
+        button { cursor: pointer; transition: background-color 0.2s; }
+        button:hover { background-color: #444; }
         .buy-btn { background-color: #26a69a; }
         .sell-btn { background-color: #ef5350; }
         .alert-btn { background-color: #5c6bc0; grid-column: span 2; margin-top: 0.5rem; }
         #logs { margin-top: 1rem; background-color: #131722; border: 1px solid #444; padding: 1rem; border-radius: 4px; height: 250px; overflow-y: auto; font-family: "Courier New", monospace; font-size: 0.9rem; }
+        .agent-control { border-top: 1px solid #444; padding-top: 1rem; margin-top: 1rem; }
+        .agent-control:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+        .agent-control select { width: 100%; margin-bottom: 0.5rem; }
+        .agent-control button { width: 100%; background-color: #3f51b5; }
     </style>
 </head>
 <body>
@@ -103,8 +109,8 @@
             timeScale: { timeVisible: true, secondsVisible: true },
         });
         const candleSeries = chart.addCandlestickSeries({ upColor: '#26a69a', downColor: '#ef5350', borderVisible: false, wickUpColor: '#26a69a', wickDownColor: '#ef5350' });
-        let bidLine = candleSeries.createPriceLine({ price: 0.0, color: '#26a69a', lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dashed, axisLabelVisible: true, title: 'Ask' });
-        let askLine = candleSeries.createPriceLine({ price: 0.0, color: '#ef5350', lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dashed, axisLabelVisible: true, title: 'Bid' });
+        let bidLine = candleSeries.createPriceLine({ price: 0.0, color: '#ef5350', lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dashed, axisLabelVisible: true, title: 'Bid' });
+        let askLine = candleSeries.createPriceLine({ price: 0.0, color: '#26a69a', lineWidth: 1, lineStyle: LightweightCharts.LineStyle.Dashed, axisLabelVisible: true, title: 'Ask' });
 
         // --- Socket.IO Handlers ---
         socket.on('log_message', (msg) => log(msg.data, 'white'));
@@ -150,7 +156,6 @@
             if (symbol && symbol !== currentSubscribedSymbol) {
                 currentSubscribedSymbol = symbol;
                 chartTitle.textContent = `Real-Time Price Chart for ${symbol}`;
-                // Clear old chart data
                 candleSeries.setData([]);
                 socket.emit('subscribe_symbol', { symbol: symbol });
             }
@@ -163,7 +168,7 @@
         }
 
         function updateAgentControls(agents) {
-            agentListContainer.innerHTML = ''; // Clear existing controls
+            agentListContainer.innerHTML = '';
             if (agents.length === 0) {
                 agentListContainer.innerHTML = '<p>No agents are currently connected.</p>';
                 return;
@@ -199,9 +204,12 @@
             });
         }
         
-        // Initial subscription
-        window.addEventListener('load', () => subscribeToSymbol(symbolInput.value));
-        // Resubscribe on symbol change
+        // Initial subscription and resize handler
+        window.addEventListener('load', () => {
+            subscribeToSymbol(symbolInput.value);
+            chart.applyOptions({ width: document.getElementById('chart').clientWidth });
+        });
+        window.addEventListener('resize', () => chart.applyOptions({ width: document.getElementById('chart').clientWidth }));
         symbolInput.addEventListener('change', () => subscribeToSymbol(symbolInput.value));
 
     </script>

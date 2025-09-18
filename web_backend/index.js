@@ -38,7 +38,7 @@ async function runZmqListener() {
             console.log(`MT4 client connected with identity: ${identity.toString('hex')}`);
         }
         const message = msg.toString('utf-8');
-        console.log(`Received from MT4: ${message}`);
+        // console.log(`Received from MT4: ${message}`); // Uncomment for verbose logging
         
         // --- Message Routing ---
         const parts = message.split('|');
@@ -62,7 +62,7 @@ async function runZmqListener() {
 
 async function sendZmqCommand(command) {
     if (mt4Identity) {
-        console.log(`Sending command to MT4: ${command}`);
+        // console.log(`Sending command to MT4: ${command}`); // Uncomment for verbose logging
         await sock.send([mt4Identity, command]);
         io.emit('log_message', { data: `Sent to MT4: ${command}` });
     } else {

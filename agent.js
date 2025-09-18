@@ -25,16 +25,22 @@ const socket = io(SERVER_URL);
  * Scans the MT4 profiles directory and returns a list of available profile names.
  */
 function getAvailableProfiles() {
-    const mt4DataPath = path.join(path.dirname(MT4_TERMINAL_PATH), 'MQL4'); // Heuristic guess
-    const profilesPath = path.join(mt4DataPath, '..', 'profiles');
-    
-    // A more reliable way is often to find the data path from Roaming AppData
-    // but this requires more complex logic. For now, we assume it's near terminal.exe.
+    // This heuristic path works for default MT4 installations.
+    const profilesPath = path.join(path.dirname(MT4_TERMINAL_PATH), '..', 'profiles');
     
     console.log(`Scanning for profiles in: ${profilesPath}`);
 
     if (!fs.existsSync(profilesPath)) {
         console.error("Error: Profiles directory not found. Please check MT4_TERMINAL_PATH.");
+        // Try to find from AppData as a fallback
+        const appDataPath = process.env.APPDATA;
+        if (appDataPath) {
+            // This is a common structure but might vary by broker.
+            const brokerProfilesPath = path.join(appDataPath, 'MetaQuotes', 'Terminal');
+            // This is complex because the final folder is a unique hash.
+            // A more robust solution would involve scanning, but for now, we'll keep it simple.
+            console.log("Could not find profiles next to terminal.exe. A more advanced search in %APPDATA% might be needed if profiles are stored there.");
+        }
         return [];
     }
 
@@ -61,26 +67,27 @@ function startMt4WithProfile(profileName) {
     const killCommand = 'taskkill /F /IM terminal.exe';
     
     // Command to start MT4 with the specified profile
-    // Note: The /portable flag is often useful if your MT4 installation is self-contained.
     const startCommand = `"${MT4_TERMINAL_PATH}" /profile:"${profileName}"`;
 
     exec(killCommand, (err, stdout, stderr) => {
-        if (err) {
-            console.warn("Could not kill terminal.exe (it might not have been running, which is okay).");
+        if (err && !stderr.includes("not found")) {
+            console.warn(`Warning when killing terminal.exe: ${stderr}`);
         } else {
-            console.log("Existing MT4 process terminated.");
+            console.log("Existing MT4 process terminated (or was not running).");
         }
 
         // Wait a moment before starting the new instance
         setTimeout(() => {
             console.log(`Executing: ${startCommand}`);
-            exec(startCommand, (err, stdout, stderr) => {
-                if (err) {
-                    console.error(`Error starting MT4: ${err.message}`);
-                    socket.emit('agent_log', { agent: AGENT_NAME, data: `Error starting MT4: ${err.message}` });
+            exec(startCommand, (err_start, stdout_start, stderr_start) => {
+                if (err_start) {
+                    const errorMessage = `Error starting MT4: ${err_start.message}`;
+                    console.error(errorMessage);
+                    socket.emit('agent_log', { agent: AGENT_NAME, data: errorMessage });
                     return;
                 }
-                console.log(`MT4 started with profile '${profileName}' successfully.`);
+                const successMessage = `MT4 started with profile '${profileName}' successfully.`;
+                console.log(successMessage);
                 socket.emit('agent_log', { agent: AGENT_NAME, data: `Successfully switched to profile: ${profileName}` });
             });
         }, 2000); // 2-second delay
