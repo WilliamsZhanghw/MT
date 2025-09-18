@@ -1,0 +1,21 @@
+{
+  "name": "mt",
+  "version": "1.0.0",
+  "description": "这是一个使用 Python 和 MQL4 开发的，用于控制 MetaTrader 4 (MT4) 进行交易的软件。",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WilliamsZhanghw/MT.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/WilliamsZhanghw/MT/issues"
+  },
+  "homepage": "https://github.com/WilliamsZhanghw/MT#readme"
+}
